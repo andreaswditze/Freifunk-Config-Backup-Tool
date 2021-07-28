@@ -14,7 +14,7 @@ Excel header description:
 The Excel header is some kind of awful german-english mix, so let's have a deeper look.
 
 This field is madatory to be filled by you:
-- IP (device IPv4 address)
+- IP (device IPv6 address)
 
 These fields may be filled by you:
 - Gerätenummer (device ID)
