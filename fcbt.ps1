@@ -6,12 +6,35 @@
 
 param (
 
+    # adapt this on your local system
+    
+    # use the excel template provided at https://github.com/andreaswditze/Freifunk-Config-Backup-Tool
     [string]$RouterFile = "/Users/user1/Downloads/fcbt/routerlist.xlsx",
+    
+    # use default openssh private key without password
     [string]$KeyFile = "/Users/user1/Downloads/fcbt/.ssh/my_secret_router_ssh_private_key_without_passwort",
+    
+    # mostly fine
     [string]$userName = "root",
+    
+    # Hint for Windows10 users: just type 'scp' in here
     [string]$ScpBin = '/usr/bin/scp',
+    
+    # that's where the backups are stored
     [string]$ConfigStorage = '/Users/user1/Downloads/fcbt/configbackups/',
+    
+    # this directory just for temporary usage
     [string]$TempStorage = '/Users/user1/Downloads/fcbt/temp',
+
+    # where to find any errors logged by this script
+    [string]$RedirectStandardError = "/Users/user1/Downloads/fcbt/error.log",
+    
+    # where to move some noisy console output
+    [string]$RedirectStandardOutput = "/Users/user1/Downloads/fcbt/output.log",
+    
+    # end of adaption
+
+    # as it's said, set only $TRUE in case of debugging this script :-)
     [bool]$Debug = $FALSE
 )
 
@@ -34,8 +57,7 @@ Write-Host "Path to Downloads   = $ConfigStorage"
 Write-Host "Path to RSA Keyfile = $KeyFile"
 
 $RouterNewFile = $RouterFile
-$RedirectStandardError = "/Users/user1/Downloads/fcbt/NUL1"
-$RedirectStandardOutput = "/Users/user1/Downloads/fcbt/NUL2"
+
 
 #$Debug = $TRUE
 
@@ -113,13 +135,13 @@ ForEach ($Item in $ExcelFile)
 {
     # create one item per excel file line
     $RouterData =  New-Object -TypeName PSObject -Property @{
-        Gerätenummer = [int]$Item.Gerätenummer
-        Typ = $Item.Typ
-        Träger = $Item.Träger
-        Ortsteil = $Item.Ortsteil
-        Standort = $Item.Standort
-        Karte = $Item.Karte
-        Bemerkung = $Item.Bemerkung
+        DeviceID = [int]$Item.DeviceID
+        Type = $Item.Type
+        Owner = $Item.Owner
+        District = $Item.District
+        Location = $Item.Location
+        MapLink = $Item.MapLink
+        Notes = $Item.Notes
         VLAN = [int]$Item.VLAN
         IP = $Item.IP
         Outdoor = [int]$Item.Outdoor
@@ -133,14 +155,14 @@ ForEach ($Item in $ExcelFile)
         SSHKeys = $Item.SSHKeys
         Release = $Item.Release
 
-    } | Select-Object Gerätenummer, 
-    Typ, 
-    Träger, 
-    Ortsteil, 
-    Standort, 
-    Bemerkung,
+    } | Select-Object DeviceID, 
+    Type, 
+    Owner, 
+    District, 
+    Location, 
+    Notes,
     Name,
-    Karte, 
+    MapLink, 
     IP, 
     Outdoor, 
     Domain, 
@@ -171,7 +193,7 @@ else
 {
     if (!($Debug))
     {
-        Write-Warning "$TempStorage already exists. Aborting."
+        Write-Warning "$TempStorage already exists. Please remove directory $TempStorage manually."
         exit    
     }
     else 
@@ -263,13 +285,13 @@ ForEach ($Entry in $ExcelFile)
             $NULL = Move-Item -Path "$TempStorage/*" -Destination $FinalStorage -Force
 
             # everything fine
-            Write-Host "Router" $Entry.Gerätenummer "available, $Hostname successfuly saved"
+            Write-Host "Router" $Entry.DeviceID "available, $Hostname successfuly saved"
            
         }
         else 
         {
             # give some hint if we can't reach a host
-            Write-Host "Router" $Entry.Gerätenummer "not available"
+            Write-Host "Router" $Entry.DeviceID "not available"
         }
     }
 
