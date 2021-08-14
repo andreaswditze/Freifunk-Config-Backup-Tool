@@ -285,7 +285,7 @@ ForEach ($Entry in $ExcelFile)
             $NULL = Move-Item -Path "$TempStorage/*" -Destination $FinalStorage -Force
 
             # everything fine
-            Write-Host "Router" $Entry.DeviceID "available, $Hostname successfuly saved"
+            Write-Host "Router" $Entry.DeviceID "available, $Hostname successfully saved"
            
         }
         else 
