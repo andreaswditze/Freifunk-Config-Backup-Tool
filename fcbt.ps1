@@ -4,39 +4,9 @@
 # powered by www.freifunk-nordhessen.de #
 #########################################
 
-param (
 
-    # adapt this on your local system
-    
-    # use the excel template provided at https://github.com/andreaswditze/Freifunk-Config-Backup-Tool
-    [string]$RouterFile = "/Users/user1/Downloads/fcbt/routerlist.xlsx",
-    
-    # use default openssh private key without password
-    [string]$KeyFile = "/Users/user1/Downloads/fcbt/.ssh/my_secret_router_ssh_private_key_without_passwort",
-    
-    # mostly fine
-    [string]$userName = "root",
-    
-    # Hint for Windows10 users: just type 'scp' in here
-    [string]$ScpBin = '/usr/bin/scp',
-    
-    # that's where the backups are stored
-    [string]$ConfigStorage = '/Users/user1/Downloads/fcbt/configbackups/',
-    
-    # this directory just for temporary usage
-    [string]$TempStorage = '/Users/user1/Downloads/fcbt/temp',
-
-    # where to find any errors logged by this script
-    [string]$RedirectStandardError = "/Users/user1/Downloads/fcbt/error.log",
-    
-    # where to move some noisy console output
-    [string]$RedirectStandardOutput = "/Users/user1/Downloads/fcbt/output.log",
-    
-    # end of adaption
-
-    # as it's said, set only $TRUE in case of debugging this script :-)
-    [bool]$Debug = $FALSE
-)
+#.\config.macos.ps1
+. .\config_example.ps1
 
 # Requirments: 
 # Install-module PSExcel
@@ -74,12 +44,12 @@ function scp-data-from-server
         # in debug mode we're only parsing the first 5 items
         if ($Index -lt 5) 
         {
-            Start-Process $ScpBin -ArgumentList "-6 -o StrictHostKeyChecking=no -o ConnectTimeout=15 -i $KeyFile $target" -RedirectStandardError "$RedirectStandardError" -RedirectStandardOutput "$RedirectStandardOutput" -Wait
+            Start-Process $ScpBin -ArgumentList "-6 -o StrictHostKeyChecking=no -o ConnectTimeout=15 -i $KeyFile $target" -RedirectStandardError "$RedirectStandardError" -RedirectStandardOutput "$RedirectStandardOutput" -Wait -NoNewWindow
         }
     }
     else 
     {
-        Start-Process $ScpBin -ArgumentList "-6 -o StrictHostKeyChecking=no -o ConnectTimeout=15 -i $KeyFile $target" -RedirectStandardError "$RedirectStandardError" -RedirectStandardOutput "$RedirectStandardOutput" -Wait    
+        Start-Process $ScpBin -ArgumentList "-6 -o StrictHostKeyChecking=no -o ConnectTimeout=15 -i $KeyFile $target" -RedirectStandardError "$RedirectStandardError" -RedirectStandardOutput "$RedirectStandardOutput" -Wait -NoNewWindow        
     }
 }
 
@@ -125,7 +95,47 @@ function get-data-from-file
 
 
 # Import Routerlist
-$ExcelFile = Import-XLSX -Path "$RouterFile"
+$ExcelFile = Import-XLSX -Path "$RouterFile" -ErrorAction SilentlyContinue
+
+if (!($ExcelFile))
+{
+    Write-Warning "Access violation, cannot lock $RouterFile"
+    Write-Warning "Close file and start again."
+    exit
+}
+
+# create backup for routerfile
+if ($RouterfileBackupStorage)
+{
+    if (!(Test-Path $RouterfileBackupStorage))
+    {
+        $NULL = New-Item -ItemType Directory $RouterfileBackupStorage
+    }
+    
+    # when do we've done the backup
+    $BackupDatetime = (Get-Date).ToString('yyyy-MM-dd_HH-mm-ss')
+    $BackupFile = $RouterfileBackupStorage+'\'+$BackupDatetime+'.xlsx'
+    Copy-Item -Path $RouterFile -Destination $BackupFile
+    
+    if (Test-Path -Path $RouterfileBackupStorage)
+    {
+        Write-Host "Routerfile backup successfully"
+    }
+    else
+    {
+        Write-Warning "Routerfile backup failed"
+        Write-Warning "Backup target: $RouterfileBackupStorage"
+        Write-Warning "Check directory and start again"
+        exit
+    }
+
+}
+else
+{
+    "Routerfile backup not configured. Skipping..."
+    'Define $RouterFileBackupStorage in config file to get routerfile backups' 
+}
+
 
 # in this array we'll store the "new" excel file
 $RouterDataArray = New-Object System.Collections.ArrayList
@@ -154,12 +164,18 @@ ForEach ($Item in $ExcelFile)
         Autoupdater = $Item.Autoupdater
         SSHKeys = $Item.SSHKeys
         Release = $Item.Release
+        LocalContactName = $Item.LocalContactName
+        LocalContactPhone = $Item.LocalContactPhone
+        LocalContactMail = $Item.LocalContactMail
 
     } | Select-Object DeviceID, 
     Type, 
     Owner, 
     District, 
     Location, 
+    LocalContactName,
+    LocalContactPhone,
+    LocalContactMail,
     Notes,
     Name,
     MapLink, 
@@ -193,7 +209,7 @@ else
 {
     if (!($Debug))
     {
-        Write-Warning "$TempStorage already exists. Please remove directory $TempStorage manually."
+        Write-Warning "$TempStorage already exists. Remove directory $TempStorage manually."
         exit    
     }
     else 
@@ -285,7 +301,7 @@ ForEach ($Entry in $ExcelFile)
             $NULL = Move-Item -Path "$TempStorage/*" -Destination $FinalStorage -Force
 
             # everything fine
-            Write-Host "Router" $Entry.DeviceID "available, $Hostname successfully saved"
+            Write-Host "Router" $Entry.DeviceID "available, $Hostname successfuly saved"
            
         }
         else 
@@ -299,7 +315,7 @@ ForEach ($Entry in $ExcelFile)
 }
 
 # Export new Excel
-$RouterDataArray | Export-XLSX -Path "$RouterNewFile" -Force -AutoFit -Table -WorksheetName "Freifunk Router"
+$RouterDataArray | Export-XLSX -Path "$RouterNewFile" -Force -Table -WorksheetName "Freifunk Router"
 
 # Remove Temp Directory
 Remove-Item $TempStorage -Force
