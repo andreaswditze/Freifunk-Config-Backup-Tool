@@ -14,7 +14,7 @@
     [string]$ConfigStorage = "~/FF/routerbackups"
     
     # this directory just for temporary usage
-    [string]$TempStorage = "~FF/temp"
+    [string]$TempStorage = "~/FF/temp"
 
     # directory for routerfile backups
     # empty variable means: no backup
