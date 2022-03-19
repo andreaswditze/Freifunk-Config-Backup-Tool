@@ -4,9 +4,8 @@
 # powered by www.freifunk-nordhessen.de #
 #########################################
 
-
-#.\config.macos.ps1
-. .\config_example.ps1
+# include your personal settings - use template provided at https://github.com/andreaswditze/Freifunk-Config-Backup-Tool/blob/main/config_example.ps1
+.\config_example.ps1
 
 # Requirments: 
 # Install-module PSExcel
